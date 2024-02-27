@@ -6,9 +6,16 @@ const flash = require('connect-flash')
 const session = require('express-session')
 const {database} = require('./keys')
 const MySQLStore = require('express-mysql-session')(session)
+const passport = require ('passport')
+
+if (typeof localStorage === "undefined" || localStorage === null) {
+   const LocalStorage = require('node-localstorage').LocalStorage;
+    localStorage = new LocalStorage('./scratch');
+  }
 
 //init
 const app = express();
+require('./lib/passport')
 
 //config
 app.set('port', process.env.PORT || 7001);
@@ -36,6 +43,8 @@ app.use(flash())
 app.use(morgan('dev'));
 app.use(express.urlencoded({extended: false}))
 app.use(express.json())
+app.use(passport.initialize())
+app.use(passport.session())
 
 //Routes
 app.use(require('./routes'))
@@ -47,9 +56,8 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 //Global Variables
 app.use((req,res,next)=>{
-console.log(req.flash('success'))
-
-    next()
+    const success = req.flash('success')
+    next({success})
 })
 
 app.listen (app.get('port'), () =>{
